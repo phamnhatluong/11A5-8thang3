@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lovely</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+}
+
+body{
+    min-height:100vh;
+    background: linear-gradient(180deg, #ffffff 0%, #ff9ec3 100%);
+}
+
+/* ===== MÀN HÌNH KHÓA ===== */
+.lock-screen{
+    width:100%;
+    height:100vh;
+    background:transparent;
+    color:white;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+}
+
+.pass-dots{
+    display:flex;
+    gap:15px;
+    margin-bottom:30px;
+
+}
+
+.dot{
+    width:15px;
+    height:15px;
+    border-radius:50%;
+    border:2px solid black;
+}
+
+.dot.active{
+    background:rgb(0, 0, 0);
+}
+
+/* pop animation when a dot becomes active */
+.dot.active{
+    animation:pop .18s ease;
+}
+
+@keyframes pop{
+    0%{transform:scale(1)}
+    50%{transform:scale(1.6)}
+    100%{transform:scale(1)}
+}
+
+.keypad{
+    display:grid;
+    grid-template-columns:repeat(3,80px);
+    gap:15px;
+}
+
+.key{
+    width:80px;
+    height:80px;
+    border-radius:50%;
+    border:1px solid #444;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:25px;
+    color: black;
+    cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease;
+}
+
+.key.pressed{
+    transform:scale(0.94);
+    box-shadow:0 10px 18px rgba(255, 113, 234, 0.271);
+}
+
+/* ===== MESSENGER ===== */
+.messenger{
+    display:none;
+    height:100vh;
+    background:transparent;
+    flex-direction:column;
+}
+
+.header{
+    padding:15px;
+    background:white;
+    font-weight:bold;
+    border-bottom:1px solid #ddd;
+}
+
+.chat{
+    flex:1;
+    padding:15px;
+    overflow-y:auto;
+}
+
+.msg{
+    background:#0084ff;
+    color:white;
+    padding:10px 15px;
+    border-radius:20px;
+    margin:10px 0;
+    width:max-content;
+    max-width:70%;
+    animation:fadeIn .5s ease;
+}
+
+@keyframes fadeIn{
+    from{opacity:0;transform:translateY(10px);}
+    to{opacity:1;transform:translateY(0);}
+}
+
+/* wrong password shake for dots */
+.dot.wrong{
+    animation:shake .4s ease;
+}
+
+@keyframes shake{
+    0%{transform:translateX(0)}
+    25%{transform:translateX(-6px)}
+    50%{transform:translateX(6px)}
+    75%{transform:translateX(-4px)}
+    100%{transform:translateX(0)}
+}
+
+/* ===== THƯ ===== */
+.letter{
+    position:fixed;
+    top:-200px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:80px;
+    cursor:pointer;
+    transition:1s;
+}
+
+.letter.show{
+    top:40%;
+}
+/* ===== IMAGE INPUT CONTAINER ===== */
+#image-input-container {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 10000;
+    background: rgba(255,255,255,0.06);
+    padding: 14px 16px;
+    border-radius: 10px;
+    color: #111;
+    width: 320px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+
+#image-input-container label{font-weight:bold; font-size:14px; color:#111}
+
+#image-links{
+    width:100%;
+    margin-top:8px;
+    padding:8px;
+    border-radius:8px;
+    border:none;
+    resize:vertical;
+    font-family:monospace;
+    font-size:0.95rem;
+    background: rgba(255,255,255,0.9);
+    color:#111;
+}
+
+#generate-link{
+    margin-top:10px;
+    width:100%;
+    padding:10px 0;
+    background-color:#ff7ab3;
+    border:none;
+    border-radius:8px;
+    color:white;
+    font-weight:700;
+    cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<!-- IMAGE INPUT (show on entry) -->
+<div id="image-input-container">
+    <label>Nhập link ảnh (hoặc chọn ảnh từ máy):</label><br />
+    <textarea id="image-links" rows="3" placeholder="https://... , https://..."></textarea>
+    <button id="generate-link">Tạo link & Mở trang</button>
+    <div style="margin-top:8px;font-size:0.95rem;">Hoặc chọn ảnh từ máy:</div>
+    <input type="file" id="image-upload" accept="image/*" multiple />
+</div>
+
+<!-- LOCK SCREEN -->
+<div class="lock-screen" id="lock">
+    <div class="pass-dots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+    </div>
+
+    <div class="keypad">
+        <div class="key">1</div>
+        <div class="key">2</div>
+        <div class="key">3</div>
+        <div class="key">4</div>
+        <div class="key">5</div>
+        <div class="key">6</div>
+        <div class="key">7</div>
+        <div class="key">8</div>
+        <div class="key">9</div>
+        <div></div>
+        <div class="key">0</div>
+        <div></div>
+    </div>
+</div>
+
+<!-- MESSENGER -->
+<div class="messenger" id="messenger" >
+    <div class="header">8/3 vui vẻ nheee❤️</div>
+    <div class="chat" id="chat"></div>
+</div>
+
+<div class="letter" id="letter">💌</div>
+
+<script>
+const correctPass = "0803"; // đổi mật khẩu tại đây
+let input = "";
+const dots = document.querySelectorAll(".dot");
+const keys = document.querySelectorAll(".key");
+
+keys.forEach(key=>{
+    key.onclick=()=>{
+        // visual press effect
+        key.classList.add('pressed');
+        setTimeout(()=>key.classList.remove('pressed'),140);
+
+        if(input.length<4){
+            input+=key.innerText;
+            const idx = input.length-1;
+            const dot = dots[idx];
+            if(dot){
+                // toggle active (will trigger CSS animation)
+                dot.classList.add("active");
+            }
+        }
+
+        if(input.length===4){
+            if(input===correctPass){
+                setTimeout(()=>{
+                    document.getElementById("lock").style.display="none";
+                    document.getElementById("messenger").style.display="flex";
+                    startChat();
+                },300);
+            }else{
+                // wrong pass: shake dots briefly then clear
+                dots.forEach(d=>d.classList.add('wrong'));
+                setTimeout(()=>{
+                    dots.forEach(d=>d.classList.remove('wrong'));
+                    input="";
+                    dots.forEach(d=>d.classList.remove("active"));
+                },400);
+            }
+        }
+    }
+});
+
+const messages = [
+"chào các bạn nữ xinh đẹp của lớp 11A5",
+"lớp chúng ta chuyên tin nhỉ",
+"nên các bạn nam 11A5 chúng tớ có một món quà nho nhỏ gửi tới các bạn nè",
+"nhớ là ấn vô bức thư nha"
+];
+
+function startChat(){
+    const chat = document.getElementById("chat");
+    let i=0;
+
+    function sendMsg(){
+        if(i < messages.length){
+            let div = document.createElement("div");
+            div.className="msg";
+            div.innerText=messages[i];
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+            i++;
+            setTimeout(sendMsg,1500);
+        }else{
+            setTimeout(()=>{
+                document.getElementById("letter").classList.add("show");
+            },1000);
+        }
+    }
+    sendMsg();
+}
+
+document.getElementById("letter").onclick=function(){
+    window.location.href="page2.html";
+}
+</script>
+
+<!-- Image input / generate script (index) -->
+<script>
+const uploadInput = document.getElementById("image-upload");
+const imageLinksTextarea = document.getElementById("image-links");
+const generateBtn = document.getElementById("generate-link");
+
+function readFileAsDataURL(file){
+    return new Promise((res,rej)=>{
+        const fr = new FileReader();
+        fr.onload = ()=>res(fr.result);
+        fr.onerror = rej;
+        fr.readAsDataURL(file);
+    });
+}
+
+// extract data URLs and http(s) links from a free-form textarea value
+function extractImageEntries(raw){
+    if(!raw || !raw.length) return [];
+    const entries = [];
+    const re = /(data:[^;]+;base64,[A-Za-z0-9+/=]+)|(https?:\/\/[^\s,\n]+)/g;
+    let m;
+    while((m = re.exec(raw)) !== null){
+        entries.push(m[0].trim());
+    }
+    // if we found entries via regex, return them
+    if(entries.length) return entries;
+    // fallback: split on newlines or commas
+    return raw.split(/\r?\n|,\s*/g).map(s=>s.trim()).filter(Boolean);
+}
+
+uploadInput.addEventListener('change', async (e)=>{
+    const files = Array.from(e.target.files || []);
+    if(files.length===0) return;
+    const dataUrls = await Promise.all(files.map(readFileAsDataURL));
+    // Append entries separated by newline (safer)
+    const existing = imageLinksTextarea.value.trim();
+    const combined = existing ? existing + '\n' + dataUrls.join('\n') : dataUrls.join('\n');
+    imageLinksTextarea.value = combined;
+    // Use the first image as the key value and create an index link: index.html?key=<image>
+    const first = dataUrls[0];
+    try{
+        const idxUrl = new URL(window.location.pathname, window.location.href);
+        idxUrl.searchParams.set('key', first);
+        await navigator.clipboard.writeText(idxUrl.href);
+        alert('Đã tạo và sao chép link index:\n' + idxUrl.href);
+        // open index link (preview)
+        window.open(idxUrl.href, '_blank');
+    }catch(e){
+        const idx = window.location.pathname + '?key=' + encodeURIComponent(first);
+        alert('Đã tạo link index: ' + idx);
+        window.open(idx, '_blank');
+    }
+    // hide the input UI (index opened with key should hide it)
+    document.getElementById('image-input-container').style.display = 'none';
+    // set the letter to open page2 with images=<first-image>
+    document.getElementById('letter').onclick = () => { window.location.href = 'page2.html?images=' + encodeURIComponent(first) };
+});
+
+generateBtn.addEventListener('click', async ()=>{
+    const raw = imageLinksTextarea.value.trim();
+    if(!raw){ alert('Bạn chưa nhập link ảnh.'); return; }
+    // extract images robustly (supports data: URLs and http(s) links)
+    let parts = extractImageEntries(raw);
+    if(!parts || parts.length===0){
+        parts = raw.split(/\r?\n|,\s*/g).map(s=>s.trim()).filter(Boolean);
+    }
+    // Use the first entry as the key value for index link
+    const first = parts[0];
+    const idxUrl = new URL(window.location.pathname, window.location.href);
+    idxUrl.searchParams.set('key', first);
+
+    try{
+        await navigator.clipboard.writeText(idxUrl.href);
+        alert('Đã tạo và sao chép link index:\n' + idxUrl.href);
+    }catch(e){
+        alert('Đã tạo link index: ' + idxUrl.href);
+    }
+    // open index link in new tab
+    window.open(idxUrl.href, '_blank');
+    // hide the input UI locally and set the letter to open page2 with images=<first>
+    document.getElementById('image-input-container').style.display = 'none';
+    document.getElementById('letter').onclick = () => { window.location.href = 'page2.html?images=' + encodeURIComponent(first) };
+});
+</script>
+
+<!-- If index is opened with ?images=..., prefill and show temp link -->
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+    const params = new URLSearchParams(window.location.search);
+    // If opened with ?key=..., hide the input UI and point the letter to page2 with that image
+    const singleKey = params.get('key');
+    if(singleKey){
+        const container = document.getElementById('image-input-container');
+        if(container) container.style.display = 'none';
+        // ensure letter opens page2 with images=<key>
+        document.getElementById('letter').onclick = () => { window.location.href = 'page2.html?images=' + encodeURIComponent(singleKey) };
+        return;
+    }
+    // support either `images` (encoded JSON) or `imagesKey` (localStorage key)
+    const raw = params.get('images');
+    const key = params.get('imagesKey');
+    let parts = null;
+    if(key){
+        try{ const stored = localStorage.getItem(key); if(stored) parts = JSON.parse(stored); }
+        catch(e){ parts = null; }
+    }
+    if(!parts && raw){
+        let decoded;
+        try{ decoded = decodeURIComponent(raw); }catch(e){ decoded = raw; }
+        try{ parts = JSON.parse(decoded); }
+        catch(e){ parts = decoded.split(',').map(s=>s.trim()).filter(Boolean); }
+    }
+    if(parts && parts.length){
+        imageLinksTextarea.value = parts.join('\n');
+        // show temporary link UI (opens page2 for preview)
+        const container = document.getElementById('image-input-container');
+        const div = document.createElement('div');
+        div.style.marginTop = '8px';
+        div.style.fontSize = '0.95rem';
+        const url = buildPage2Url(parts);
+        if(key) url.searchParams.set('imagesKey', key);
+        div.innerHTML = 'Link tạm: <a href="'+url.href+'" target="_blank">Mở trang với ảnh</a>';
+        // set letter to open page2 with these images
+        document.getElementById('letter').onclick = () => { window.location.href = url.href };
+        container.appendChild(div);
+    }
+});
+</script>
+
+<script>
+// helper to build page2 URL from parts and optionally store large payload in localStorage
+function buildPage2Url(parts){
+    const json = JSON.stringify(parts);
+    const encoded = encodeURIComponent(json);
+    const url = new URL('page2.html', window.location.href);
+    if(encoded.length > 1500){
+        const key = 'images_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8);
+        try{ localStorage.setItem(key, json); url.searchParams.set('imagesKey', key); }
+        catch(e){ url.searchParams.set('images', encoded); }
+    }else{
+        url.searchParams.set('images', encoded);
+    }
+    return url;
+}
+</script>
+
+</body>
+</html>
