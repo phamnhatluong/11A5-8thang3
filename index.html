@@ -350,22 +350,41 @@ uploadInput.addEventListener('change', async (e)=>{
     imageLinksTextarea.value = combined;
     // Build a page2 URL using all selected images (supports data URLs)
     try{
-        const url = buildPage2Url(dataUrls);
-        await navigator.clipboard.writeText(url.href);
-        alert('Đã tạo và sao chép link index:\n' + url.href);
-        window.open(url.href, '_blank');
-        // hide the input UI (index opened with key should hide it)
-        document.getElementById('image-input-container').style.display = 'none';
-        // set the letter to open page2 with these images
-        document.getElementById('letter').onclick = () => { window.location.href = url.href };
+        // encode the images array as JSON and store in `key`
+        const keyVal = encodeURIComponent(JSON.stringify(dataUrls));
+        const idxUrl = new URL(window.location.pathname, window.location.href);
+        idxUrl.searchParams.set('key', keyVal);
+        await navigator.clipboard.writeText(idxUrl.href);
+        alert('Đã tạo và sao chép link index:\n' + idxUrl.href);
+        // Show a temporary link UI but keep the input visible so user stays on index
+        const container = document.getElementById('image-input-container');
+        const infoDiv = document.createElement('div');
+        infoDiv.style.marginTop = '8px';
+        infoDiv.style.fontSize = '0.95rem';
+        infoDiv.innerHTML = 'Link tạm: <a href="'+idxUrl.href+'" target="_blank">Mở trang với ảnh</a>';
+        // remove previous temp link if present
+        const existingTemp = container.querySelector('.temp-link');
+        if(existingTemp) existingTemp.remove();
+        infoDiv.className = 'temp-link';
+        container.appendChild(infoDiv);
+        // set the letter to open page2 with images=<decoded JSON>
+        const page2param = 'page2.html?images=' + encodeURIComponent(JSON.stringify(dataUrls));
+        document.getElementById('letter').onclick = () => { window.location.href = page2param };
     }catch(e){
-        // fallback: construct a simple query with first image if clipboard fails
+        // fallback: use first image as key (encoded)
         const first = dataUrls[0];
-        const idx = window.location.pathname + '?key=' + encodeURIComponent(first);
+        const idx = window.location.pathname + '?key=' + encodeURIComponent(JSON.stringify([first]));
         alert('Đã tạo link index: ' + idx);
-        window.open(idx, '_blank');
-        document.getElementById('image-input-container').style.display = 'none';
-        document.getElementById('letter').onclick = () => { window.location.href = 'page2.html?images=' + encodeURIComponent(first) };
+        const container = document.getElementById('image-input-container');
+        const infoDiv = document.createElement('div');
+        infoDiv.style.marginTop = '8px';
+        infoDiv.style.fontSize = '0.95rem';
+        infoDiv.innerHTML = 'Link tạm: <a href="'+idx+'" target="_blank">Mở trang với ảnh</a>';
+        const existingTemp = container.querySelector('.temp-link');
+        if(existingTemp) existingTemp.remove();
+        infoDiv.className = 'temp-link';
+        container.appendChild(infoDiv);
+        document.getElementById('letter').onclick = () => { window.location.href = 'page2.html?images=' + encodeURIComponent(JSON.stringify([first])) };
     }
 });
 
@@ -379,21 +398,40 @@ generateBtn.addEventListener('click', async ()=>{
     }
     // Build a page2 URL using all provided image links
     try{
-        const url = buildPage2Url(parts);
-        await navigator.clipboard.writeText(url.href);
-        alert('Đã tạo và sao chép link index:\n' + url.href);
-        window.open(url.href, '_blank');
-        document.getElementById('image-input-container').style.display = 'none';
-        document.getElementById('letter').onclick = () => { window.location.href = url.href };
+        // encode parts array into the key as JSON
+        const keyVal = encodeURIComponent(JSON.stringify(parts));
+        const idxUrl = new URL(window.location.pathname, window.location.href);
+        idxUrl.searchParams.set('key', keyVal);
+        await navigator.clipboard.writeText(idxUrl.href);
+        alert('Đã tạo và sao chép link index:\n' + idxUrl.href);
+        // Show temporary link UI and keep index visible
+        const container = document.getElementById('image-input-container');
+        const infoDiv = document.createElement('div');
+        infoDiv.style.marginTop = '8px';
+        infoDiv.style.fontSize = '0.95rem';
+        infoDiv.innerHTML = 'Link tạm: <a href="'+idxUrl.href+'" target="_blank">Mở trang với ảnh</a>';
+        const existingTemp = container.querySelector('.temp-link');
+        if(existingTemp) existingTemp.remove();
+        infoDiv.className = 'temp-link';
+        container.appendChild(infoDiv);
+        const page2param = 'page2.html?images=' + encodeURIComponent(JSON.stringify(parts));
+        document.getElementById('letter').onclick = () => { window.location.href = page2param };
     }catch(e){
-        // fallback: use first image if something goes wrong
+        // fallback: use first image as key
         const first = parts[0];
         const idxUrl = new URL(window.location.pathname, window.location.href);
-        idxUrl.searchParams.set('key', first);
+        idxUrl.searchParams.set('key', encodeURIComponent(JSON.stringify([first])));
         alert('Đã tạo link index: ' + idxUrl.href);
-        window.open(idxUrl.href, '_blank');
-        document.getElementById('image-input-container').style.display = 'none';
-        document.getElementById('letter').onclick = () => { window.location.href = 'page2.html?images=' + encodeURIComponent(first) };
+        const container = document.getElementById('image-input-container');
+        const infoDiv = document.createElement('div');
+        infoDiv.style.marginTop = '8px';
+        infoDiv.style.fontSize = '0.95rem';
+        infoDiv.innerHTML = 'Link tạm: <a href="'+idxUrl.href+'" target="_blank">Mở trang với ảnh</a>';
+        const existingTemp = container.querySelector('.temp-link');
+        if(existingTemp) existingTemp.remove();
+        infoDiv.className = 'temp-link';
+        container.appendChild(infoDiv);
+        document.getElementById('letter').onclick = () => { window.location.href = 'page2.html?images=' + encodeURIComponent(JSON.stringify([first])) };
     }
 });
 </script>
@@ -407,8 +445,27 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(singleKey){
         const container = document.getElementById('image-input-container');
         if(container) container.style.display = 'none';
-        // ensure letter opens page2 with images=<key>
-        document.getElementById('letter').onclick = () => { window.location.href = 'page2.html?images=' + encodeURIComponent(singleKey) };
+        // decode key: it should be encodeURIComponent(JSON.stringify(array)) created earlier
+        let decoded = null;
+        try{ decoded = decodeURIComponent(singleKey); }catch(e){ decoded = singleKey; }
+        try{
+            const arr = JSON.parse(decoded);
+            if(Array.isArray(arr)){
+                // set letter to open page2 with encoded JSON array
+                document.getElementById('letter').onclick = () => { window.location.href = 'page2.html?images=' + encodeURIComponent(JSON.stringify(arr)) };
+                return;
+            }
+        }catch(e){ /* not JSON */ }
+        // fallback: if decoded looks like a URL to page2, use it; else treat as single image
+        try{
+            const parsed = new URL(decoded, window.location.href);
+            if(parsed.pathname && parsed.pathname.endsWith('page2.html') || parsed.searchParams.has('images')){
+                document.getElementById('letter').onclick = () => { window.location.href = parsed.href };
+                return;
+            }
+        }catch(e){ /* not a URL */ }
+        // treat as single image link
+        document.getElementById('letter').onclick = () => { window.location.href = 'page2.html?images=' + encodeURIComponent(JSON.stringify([decoded])) };
         return;
     }
     // support either `images` (encoded JSON) or `imagesKey` (localStorage key)
