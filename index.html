@@ -348,24 +348,25 @@ uploadInput.addEventListener('change', async (e)=>{
     const existing = imageLinksTextarea.value.trim();
     const combined = existing ? existing + '\n' + dataUrls.join('\n') : dataUrls.join('\n');
     imageLinksTextarea.value = combined;
-    // Use the first image as the key value and create an index link: index.html?key=<image>
-    const first = dataUrls[0];
+    // Build a page2 URL using all selected images (supports data URLs)
     try{
-        const idxUrl = new URL(window.location.pathname, window.location.href);
-        idxUrl.searchParams.set('key', first);
-        await navigator.clipboard.writeText(idxUrl.href);
-        alert('Đã tạo và sao chép link index:\n' + idxUrl.href);
-        // open index link (preview)
-        window.open(idxUrl.href, '_blank');
+        const url = buildPage2Url(dataUrls);
+        await navigator.clipboard.writeText(url.href);
+        alert('Đã tạo và sao chép link index:\n' + url.href);
+        window.open(url.href, '_blank');
+        // hide the input UI (index opened with key should hide it)
+        document.getElementById('image-input-container').style.display = 'none';
+        // set the letter to open page2 with these images
+        document.getElementById('letter').onclick = () => { window.location.href = url.href };
     }catch(e){
+        // fallback: construct a simple query with first image if clipboard fails
+        const first = dataUrls[0];
         const idx = window.location.pathname + '?key=' + encodeURIComponent(first);
         alert('Đã tạo link index: ' + idx);
         window.open(idx, '_blank');
+        document.getElementById('image-input-container').style.display = 'none';
+        document.getElementById('letter').onclick = () => { window.location.href = 'page2.html?images=' + encodeURIComponent(first) };
     }
-    // hide the input UI (index opened with key should hide it)
-    document.getElementById('image-input-container').style.display = 'none';
-    // set the letter to open page2 with images=<first-image>
-    document.getElementById('letter').onclick = () => { window.location.href = 'page2.html?images=' + encodeURIComponent(first) };
 });
 
 generateBtn.addEventListener('click', async ()=>{
@@ -376,22 +377,24 @@ generateBtn.addEventListener('click', async ()=>{
     if(!parts || parts.length===0){
         parts = raw.split(/\r?\n|,\s*/g).map(s=>s.trim()).filter(Boolean);
     }
-    // Use the first entry as the key value for index link
-    const first = parts[0];
-    const idxUrl = new URL(window.location.pathname, window.location.href);
-    idxUrl.searchParams.set('key', first);
-
+    // Build a page2 URL using all provided image links
     try{
-        await navigator.clipboard.writeText(idxUrl.href);
-        alert('Đã tạo và sao chép link index:\n' + idxUrl.href);
+        const url = buildPage2Url(parts);
+        await navigator.clipboard.writeText(url.href);
+        alert('Đã tạo và sao chép link index:\n' + url.href);
+        window.open(url.href, '_blank');
+        document.getElementById('image-input-container').style.display = 'none';
+        document.getElementById('letter').onclick = () => { window.location.href = url.href };
     }catch(e){
+        // fallback: use first image if something goes wrong
+        const first = parts[0];
+        const idxUrl = new URL(window.location.pathname, window.location.href);
+        idxUrl.searchParams.set('key', first);
         alert('Đã tạo link index: ' + idxUrl.href);
+        window.open(idxUrl.href, '_blank');
+        document.getElementById('image-input-container').style.display = 'none';
+        document.getElementById('letter').onclick = () => { window.location.href = 'page2.html?images=' + encodeURIComponent(first) };
     }
-    // open index link in new tab
-    window.open(idxUrl.href, '_blank');
-    // hide the input UI locally and set the letter to open page2 with images=<first>
-    document.getElementById('image-input-container').style.display = 'none';
-    document.getElementById('letter').onclick = () => { window.location.href = 'page2.html?images=' + encodeURIComponent(first) };
 });
 </script>
 
